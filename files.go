@@ -19,6 +19,7 @@ var (
 	async    = flag.Bool("A", false, "Asynchronized find")
 	absolute = flag.Bool("a", false, "Display absolute path")
 	fsort    = flag.Bool("s", false, "Sort results")
+	lsort    = flag.Bool("S", false, "Sort results by length")
 	match    = flag.String("m", "", "Display matched files")
 	maxfiles = flag.Int64("M", -1, "Max files")
 )
@@ -29,6 +30,23 @@ var (
 	maxcount = int64(^uint64(0) >> 1)
 	maxError = errors.New("Overflow max count")
 )
+
+type lengthSorter []string
+
+func (s lengthSorter) Len() int {
+	return len(s)
+}
+
+func (s lengthSorter) Less(i, j int) bool {
+	if len(s[i]) == len(s[j]) {
+		return s[i] < s[j]
+	}
+	return len(s[i]) < len(s[j])
+}
+
+func (s lengthSorter) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
 
 func env(key, def string) string {
 	if v := os.Getenv(key); v != "" {
@@ -224,6 +242,15 @@ func main() {
 			fs = append(fs, s)
 		}
 		sort.Strings(fs)
+		for _, s := range fs {
+			printLine(s)
+		}
+	} else if *lsort {
+		fs := []string{}
+		for s := range q {
+			fs = append(fs, s)
+		}
+		sort.Sort(lengthSorter(fs))
 		for _, s := range fs {
 			printLine(s)
 		}
